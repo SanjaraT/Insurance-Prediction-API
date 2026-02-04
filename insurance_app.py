@@ -1,5 +1,5 @@
 from fastapi import FastAPI,Path,HTTPException,Query
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, field_validator
 from typing import Annotated, Literal
 import joblib
 import pandas as pd
@@ -13,6 +13,16 @@ app = FastAPI()
 @app.get("/")
 def home():
     return {"message": "Insurance Prediction API is running"}
+
+MODEL_VERSION = '1.0.0'
+@app.get('/health')
+def health_check():
+    return{
+        'status' : 'OKAY',
+        'version': MODEL_VERSION,
+        'update': model is not None
+
+    }
 
 tier_1_cities = {
     "Mumbai", "Delhi", "Bangalore", "Chennai",
@@ -42,6 +52,12 @@ class UserInput(BaseModel):
     city : Annotated[str, Field(..., description='Enter your City')]
     occupation : Annotated[Literal['retired', 'freelancer', 'student', 'government_job', 'business_owner',
  'unemployed', 'private_job'], Field(..., description='Enter Patient Geneder')]
+    
+    @field_validator('city')
+    @classmethod
+    def normalize_city(cls, v:str)-> str:
+        v = v.strip().title()
+        return v
 
     @computed_field
     @property

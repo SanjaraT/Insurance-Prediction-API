@@ -4,6 +4,7 @@ import pandas as pd
 from fastapi.responses import JSONResponse
 import numpy as np
 from schema.user_input import UserInput
+from model.predict import predict_output, model, MODEL_VERSION
 
 #Import ML model
 model = joblib.load("model/insurance_model.pkl")
@@ -22,29 +23,24 @@ def health_check():
         'update': model is not None
 
     }
-       
-RISK_MAP = {
-    0: "low",
-    1: "medium",
-    2: "high"
-}
-
 @app.post("/predict")
 def predict_premium(data: UserInput):
     
-    input_df = pd.DataFrame([{
+    user_input = {
         'bmi': data.bmi,
         'age_group': data.age_group,
         'lifestyle_risk': data.lifestyle_risk,
         'city_tier': data.city_tier,
         'income_lpa': data.income_lpa,
         'occupation': data.occupation
-    }])
+    }
 
-    #Prediction
-    pred = model.predict(input_df)[0]
-    if hasattr(pred, "item"):
-        pred = pred.item()
+    try:
+        result = predict_output(user_input)
+        return JSONResponse(status_code=200, content=result)
 
-    return JSONResponse(status_code=200, content={"predicted_category": RISK_MAP[pred]})
-
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )

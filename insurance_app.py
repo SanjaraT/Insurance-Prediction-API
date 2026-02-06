@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 import numpy as np
 from schema.user_input import UserInput
 from model.predict import predict_output, model, MODEL_VERSION
+from schema.response import PredictionResponse
 
 #Import ML model
 model = joblib.load("model/insurance_model.pkl")
@@ -23,7 +24,7 @@ def health_check():
         'update': model is not None
 
     }
-@app.post("/predict")
+@app.post("/predict", response_model = PredictionResponse)
 def predict_premium(data: UserInput):
     
     user_input = {
